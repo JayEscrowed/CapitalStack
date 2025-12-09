@@ -253,3 +253,4 @@ npm start
 ## License
 
 Proprietary - All rights reserved
+# CapitalStack
