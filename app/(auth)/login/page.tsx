@@ -58,9 +58,7 @@ function LoginForm() {
             </div>
           )}
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
+            <label htmlFor="email" className="text-sm font-medium">Email</label>
             <Input
               id="email"
               type="email"
@@ -71,13 +69,11 @@ function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
+            <label htmlFor="password" className="text-sm font-medium">Password</label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -89,10 +85,8 @@ function LoginForm() {
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
           <p className="text-sm text-center text-gray-600">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline">
-              Sign up
-            </Link>
+            Do not have an account?{' '}
+            <Link href="/register" className="text-blue-600 hover:underline">Sign up</Link>
           </p>
         </CardFooter>
       </form>
@@ -102,7 +96,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center"><div>Loading...</div></div>}>
       <LoginForm />
     </Suspense>
   );
