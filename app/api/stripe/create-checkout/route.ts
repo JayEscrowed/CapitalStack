@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getAuthSession } from '@/lib/auth';
 import { createCheckoutSession, PLANS, PlanKey } from '@/lib/stripe';
