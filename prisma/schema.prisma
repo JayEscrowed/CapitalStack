@@ -1,0 +1,259 @@
+// ===========================================
+// CAPITALSTACK - Database Schema
+// ===========================================
+// Run: npx prisma db push (development)
+// Run: npx prisma migrate dev (production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ===========================================
+// AUTHENTICATION MODELS
+// ===========================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ===========================================
+// USER MODEL
+// ===========================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For email/password auth
+  
+  // Subscription
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  plan                   Plan      @default(FREE)
+  
+  // Metadata
+  company     String?
+  role        String?
+  phone       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  savedBuyers   SavedBuyer[]
+  savedContacts SavedContact[]
+  searches      SearchHistory[]
+  exports       ExportHistory[]
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+// ===========================================
+// BUYER DATABASE
+// ===========================================
+
+model Buyer {
+  id          String   @id @default(cuid())
+  company     String
+  category    String?
+  buyBox      String?  @db.Text
+  markets     String?  @db.Text
+  dealSize    String?
+  submitDeal  String?
+  email       String?
+  phone       String?
+  hq          String?
+  sourceUrl   String?
+  
+  // Extended fields
+  aum              String?
+  fundSize         String?
+  investmentFocus  String?
+  assetClasses     String[]
+  targetReturns    String?
+  notes            String?  @db.Text
+  verified         Boolean  @default(false)
+  verifiedAt       DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  contacts     Contact[]
+  savedBy      SavedBuyer[]
+  
+  @@index([company])
+  @@index([category])
+  @@index([markets])
+}
+
+// ===========================================
+// CONTACT DATABASE
+// ===========================================
+
+model Contact {
+  id        String  @id @default(cuid())
+  firstName String?
+  lastName  String?
+  fullName  String?
+  email     String?
+  phone     String?
+  title     String?
+  linkedin  String?
+  
+  // Company relationship
+  company   String?
+  buyerId   String?
+  buyer     Buyer?  @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+  
+  // Metadata
+  verified     Boolean  @default(false)
+  verifiedAt   DateTime?
+  lastContacted DateTime?
+  notes        String?  @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  savedBy SavedContact[]
+  
+  @@index([company])
+  @@index([email])
+  @@index([lastName])
+}
+
+// ===========================================
+// USER ACTIVITY
+// ===========================================
+
+model SavedBuyer {
+  id      String @id @default(cuid())
+  userId  String
+  buyerId String
+  notes   String? @db.Text
+  
+  createdAt DateTime @default(now())
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buyer Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, buyerId])
+  @@index([userId])
+}
+
+model SavedContact {
+  id        String @id @default(cuid())
+  userId    String
+  contactId String
+  notes     String? @db.Text
+  
+  createdAt DateTime @default(now())
+  
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, contactId])
+  @@index([userId])
+}
+
+model SearchHistory {
+  id       String @id @default(cuid())
+  userId   String
+  query    String
+  filters  Json?
+  results  Int    @default(0)
+  
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ExportHistory {
+  id       String @id @default(cuid())
+  userId   String
+  type     ExportType
+  count    Int
+  filters  Json?
+  
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+enum ExportType {
+  BUYERS
+  CONTACTS
+  COMBINED
+}
+
+// ===========================================
+// SYSTEM
+// ===========================================
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  userId      String
+  lastUsed    DateTime?
+  expiresAt   DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([key])
+  @@index([userId])
+}
